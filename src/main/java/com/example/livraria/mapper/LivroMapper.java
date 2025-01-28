@@ -5,6 +5,8 @@ import com.example.livraria.dto.Livro.LivroResponse;
 import com.example.livraria.model.Livro;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class LivroMapper {
     public Livro toLivro(LivroRequest livroDTO
@@ -14,7 +16,7 @@ public class LivroMapper {
         livro.setDescricao(livroDTO.descricao());
         livro.setIsbn(livroDTO.isbn());
         livro.setDataPublicacao(livroDTO.dataPublicacao());
-        livro.setCategoria(livroDTO.categoria());
+        livro.setCategoria(livroDTO.categorias());
         return livro;
     }
 
@@ -25,7 +27,7 @@ public class LivroMapper {
                 livro.getIsbn(),
                 livro.getCategoria(),
                 livro.getDescricao(),
-                livro.getDataPublicacao()
+                livro.getDataPublicacao().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         );
     }
 }

@@ -23,7 +23,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping(value = "/usuario/", produces = {"aplication/json"})
+@RequestMapping(value = "/usuario", produces = {"aplication/json"})
 public class UsuarioController {
 
     @Autowired
@@ -35,7 +35,7 @@ public class UsuarioController {
     @Autowired
     private LivroRepository livroRepository;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/",produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<EntityModel<UsuarioResponse>>> getAll() {
         List<Usuario> usuarios = usuarioRepository.findAll();
 
@@ -49,7 +49,7 @@ public class UsuarioController {
                                 linkTo(methodOn(UsuarioController.class).getAll()).withSelfRel(),
                                 linkTo(methodOn(UsuarioController.class).getById(usuario.getId())).withRel("getUsuarioById"),
                                 linkTo(methodOn(UsuarioController.class).createUser (null)).withRel("createUsuario"),
-                                linkTo(methodOn(UsuarioController.class).updateInfo(usuario.getId())).withRel("updateUsuario"),
+                                linkTo(methodOn(UsuarioController.class).updateInfo(usuario.getId(), null)).withRel("updateUsuario"),
                                 linkTo(methodOn(UsuarioController.class).deleteUser (usuario.getId())).withRel("deleteUsuario"),
                                 linkTo(methodOn(UsuarioController.class).addToFavoritos(usuario.getId(), null)).withRel("addLivroToFavoritos"),
                                 linkTo(methodOn(UsuarioController.class).removeFromFavoritos(usuario.getId(), null)).withRel("removeLivroFromFavoritos")
@@ -60,29 +60,30 @@ public class UsuarioController {
         }
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<EntityModel<UsuarioResponse>> getById(@PathVariable Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
+    @GetMapping(value = "/{id_usuario}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<EntityModel<UsuarioResponse>> getById(@PathVariable Long id_usuario) {
+        Usuario usuario = usuarioRepository.findById(id_usuario)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
 
         UsuarioResponse usuarioDTO = usuarioMapper.toUsuarioDTO(usuario);
         return new ResponseEntity<>(EntityModel.of(usuarioDTO,
-                linkTo(methodOn(UsuarioController.class).getById(id)).withSelfRel(),
+                linkTo(methodOn(UsuarioController.class).getById(id_usuario)).withSelfRel(),
                 linkTo(methodOn(UsuarioController.class).getAll()).withRel("getAllUsuarios"),
                 linkTo(methodOn(UsuarioController.class).createUser (null)).withRel("createUsuario"),
-                linkTo(methodOn(UsuarioController.class).updateInfo(id)).withRel("updateUsuario"),
-                linkTo(methodOn(UsuarioController.class).deleteUser (id)).withRel("deleteUsuario"),
+                linkTo(methodOn(UsuarioController.class).updateInfo(id_usuario, null)).withRel("updateUsuario"),
+                linkTo(methodOn(UsuarioController.class).deleteUser (id_usuario)).withRel("deleteUsuario"),
                 linkTo(methodOn(UsuarioController.class).addToFavoritos(usuario.getId(), null)).withRel("addLivroToFavoritos"),
                 linkTo(methodOn(UsuarioController.class).removeFromFavoritos(usuario.getId(), null)).withRel("removeLivroFromFavoritos")
         ), HttpStatus.OK);
     }
 
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/",produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EntityModel<UsuarioResponse>> createUser (@RequestBody UsuarioRequest usuarioRequest) {
+
         Optional<Usuario> usuarioExistente = usuarioRepository.findByEmail(usuarioRequest.email());
 
         if (usuarioExistente.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Já existe um usuário com este e-mail");
         }
 
         Usuario usuario = usuarioMapper.toUsuario(usuarioRequest);
@@ -92,7 +93,7 @@ public class UsuarioController {
         return new ResponseEntity<>(EntityModel.of(usuarioDTO,
                         linkTo(methodOn(UsuarioController.class).getById(usuarioSalvo.getId())).withSelfRel(),
                         linkTo(methodOn(UsuarioController.class).getAll()).withRel("getAllUsuarios"),
-                        linkTo(methodOn(UsuarioController.class).updateInfo(usuarioSalvo.getId())).withRel("updateUsuario"),
+                        linkTo(methodOn(UsuarioController.class).updateInfo(usuarioSalvo.getId(), null)).withRel("updateUsuario"),
                         linkTo(methodOn(UsuarioController.class).deleteUser (usuarioSalvo.getId())).withRel("deleteUsuario"),
                         linkTo(methodOn(UsuarioController.class).addToFavoritos(usuarioSalvo.getId(), null)).withRel("addLivroToFavoritos"),
                         linkTo(methodOn(UsuarioController.class).removeFromFavoritos(usuarioSalvo.getId(), null)).withRel("removeLivroFromFavoritos")
@@ -100,15 +101,19 @@ public class UsuarioController {
     }
 
     @PutMapping(value = "/{id_usuario}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<EntityModel<UsuarioResponse>> updateInfo(@PathVariable Long id_usuario) {
+    public ResponseEntity<EntityModel<UsuarioResponse>> updateInfo(@PathVariable Long id_usuario, @RequestBody UsuarioRequest usuarioRequest) {
         Usuario usuario = usuarioRepository.findById(id_usuario)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+
+        usuario.setNome(usuarioRequest.nome());
+        usuario.setEmail(usuarioRequest.email());
+        usuario.setDataNascimento(usuarioRequest.dataNascimento());
 
         usuarioRepository.save(usuario);
         UsuarioResponse usuarioDTO = usuarioMapper.toUsuarioDTO(usuario);
 
         return new ResponseEntity<>(EntityModel.of(usuarioDTO,
-                linkTo(methodOn( UsuarioController.class).updateInfo(id_usuario)).withSelfRel(),
+                linkTo(methodOn( UsuarioController.class).updateInfo(id_usuario, null)).withSelfRel(),
                 linkTo(methodOn(UsuarioController.class).getAll()).withRel("getAllUsuarios"),
                 linkTo(methodOn(UsuarioController.class).getById(id_usuario)).withRel("getUsuarioById"),
                 linkTo(methodOn(UsuarioController.class).deleteUser (id_usuario)).withRel("deleteUsuario"),
@@ -159,7 +164,7 @@ public class UsuarioController {
                     linkTo(methodOn(UsuarioController.class).removeFromFavoritos(usuario.getId(), null)).withRel("removeLivroFromFavoritos"),
                     linkTo(methodOn(UsuarioController.class).getAll()).withRel("getAllUsuarios"),
                     linkTo(methodOn(UsuarioController.class).getById(id_usuario)).withRel("getUsuarioById"),
-                    linkTo(methodOn(UsuarioController.class).updateInfo(id_usuario)).withRel("updateUsuario"),
+                    linkTo(methodOn(UsuarioController.class).updateInfo(id_usuario, null)).withRel("updateUsuario"),
                     linkTo(methodOn(UsuarioController.class).deleteUser (id_usuario)).withRel("deleteUsuario")
             ), HttpStatus.OK);
         } else {

@@ -2,24 +2,23 @@ package com.example.livraria.mapper;
 
 import com.example.livraria.dto.Categoria.CategoriaRequest;
 import com.example.livraria.dto.Categoria.CategoriaResponse;
-import com.example.livraria.model.Categoria;
+import com.example.livraria.model.Categorias;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CategoriaMapper {
 
-    public Categoria toCategoria(CategoriaRequest categoriaDTO
+    public Categorias toCategoria(CategoriaRequest categoriaDTO
     ) {
-        Categoria categoria = new Categoria();
-
-        categoria.setCategoria(categoriaDTO.categoria());
-        return categoria;
+        Categorias categorias = new Categorias();
+        categorias.setCategoria(categoriaDTO.categoria());
+        return categorias;
     }
 
-    public CategoriaResponse toCategoriaDTO(Categoria categoria) {
+    public CategoriaResponse toCategoriaDTO(Categorias categorias) {
         return new CategoriaResponse(
-                categoria.getId(),
-                categoria.getCategoria()
+                categorias.getId(),
+                categorias.getCategoria()
         );
     }
 }

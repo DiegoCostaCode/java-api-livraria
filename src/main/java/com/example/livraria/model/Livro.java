@@ -1,5 +1,6 @@
 package com.example.livraria.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,12 +26,13 @@ public class Livro {
 
     @ManyToOne
     @JoinColumn(name = "id_categoria")
-    private Categoria categoria;
+    private Categorias categoria;
 
     @Column(name = "isbn")
     private String isbn;
 
     @ManyToMany(mappedBy = "favoritos")
+    @JsonBackReference
     private Set<Usuario> usuariosFavoritos = new HashSet<>();
 
     @Column(name = "data_publicacao")

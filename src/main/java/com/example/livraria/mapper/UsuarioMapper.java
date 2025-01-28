@@ -6,6 +6,7 @@ import com.example.livraria.model.Usuario;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class UsuarioMapper {
@@ -16,6 +17,7 @@ public class UsuarioMapper {
         usuario.setNome(usuarioDTO.nome());
         usuario.setEmail(usuarioDTO.email());
         usuario.setSince(LocalDateTime.now());
+        usuario.setDataNascimento(usuarioDTO.dataNascimento());
         return usuario;
     }
 
@@ -25,7 +27,8 @@ public class UsuarioMapper {
                 usuario.getNome(),
                 usuario.getEmail(),
                 usuario.getFavoritos(),
-                usuario.getSince().toString()
+                usuario.getDataNascimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                usuario.getSince().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
         );
     }
 }

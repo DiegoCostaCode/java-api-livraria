@@ -3,7 +3,9 @@ package com.example.livraria.controller;
 import com.example.livraria.dto.Livro.LivroRequest;
 import com.example.livraria.dto.Livro.LivroResponse;
 import com.example.livraria.mapper.LivroMapper;
+import com.example.livraria.model.Categorias;
 import com.example.livraria.model.Livro;
+import com.example.livraria.repositories.CategoriaRepository;
 import com.example.livraria.repositories.LivroRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
@@ -20,7 +22,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping(value = "/livro/", produces = {"aplication/json"})
+@RequestMapping(value = "/livro", produces = {"aplication/json"})
 public class LivroController {
 
     @Autowired
@@ -28,8 +30,10 @@ public class LivroController {
 
     @Autowired
     private LivroMapper livroMapper;
+    @Autowired
+    private CategoriaRepository categoriaRepository;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<EntityModel<LivroResponse>>> getAllLivros() {
         List<Livro> livros = livroRepository.findAll();
 
@@ -42,7 +46,8 @@ public class LivroController {
                         return EntityModel.of(livroDTO,
                                 linkTo(methodOn(LivroController.class).getAllLivros()).withSelfRel(),
                                 linkTo(methodOn(LivroController.class).getLivroById(livro.getId())).withRel("getLivroById"),
-                                linkTo(methodOn(LivroController.class).updateInfoLivro(livro.getId())).withRel("updateInfoLivro"),
+                                linkTo(methodOn(LivroController.class).createLivro(null)).withRel("createLivro"),
+                                linkTo(methodOn(LivroController.class).updateInfoLivro(livro.getId(), null)).withRel("updateInfoLivro"),
                                 linkTo(methodOn(LivroController.class).deleteLivro(livro.getId())).withRel("deleteLivro")
                         );
                     }).toList();
@@ -51,7 +56,7 @@ public class LivroController {
         }
     }
 
-    @GetMapping(value = "{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EntityModel<LivroResponse>> getLivroById(@PathVariable Long id_livro) {
 
         Livro livro = livroRepository.findById(id_livro)
@@ -62,12 +67,13 @@ public class LivroController {
         return new ResponseEntity<>(EntityModel.of(livroDTO,
                 linkTo(methodOn(LivroController.class).getLivroById(id_livro)).withSelfRel(),
                 linkTo(methodOn(LivroController.class).getAllLivros()).withRel("getAllLivros"),
-                linkTo(methodOn(LivroController.class).updateInfoLivro(id_livro)).withRel("updateInfoLivro"),
+                linkTo(methodOn(LivroController.class).createLivro(null)).withRel("createLivro"),
+                linkTo(methodOn(LivroController.class).updateInfoLivro(id_livro, null)).withRel("updateInfoLivro"),
                 linkTo(methodOn(LivroController.class).deleteLivro(id_livro)).withRel("deleteLivro")),
                 HttpStatus.OK);
     }
 
-    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/",produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EntityModel<LivroResponse>> createLivro(@RequestBody LivroRequest livroDTO) {
 
         Livro livro = livroMapper.toLivro(livroDTO);
@@ -78,30 +84,37 @@ public class LivroController {
                 linkTo(methodOn(LivroController.class).createLivro(livroDTO)).withSelfRel(),
                 linkTo(methodOn(LivroController.class).getLivroById(livro.getId())).withRel("getLivroById"),
                 linkTo(methodOn(LivroController.class).getAllLivros()).withRel("getAllLivros"),
-                linkTo(methodOn(LivroController.class).updateInfoLivro(livro.getId())).withRel("updateInfoLivro"),
+                linkTo(methodOn(LivroController.class).updateInfoLivro(livro.getId(), null)).withRel("updateInfoLivro"),
                 linkTo(methodOn(LivroController.class).deleteLivro(livro.getId())).withRel("deleteLivro")
         ), HttpStatus.CREATED);
     }
 
-    @PutMapping(value = "{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<EntityModel<LivroResponse>> updateInfoLivro(@PathVariable Long id_livro) {
+    @PutMapping(value = "/{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<EntityModel<LivroResponse>> updateInfoLivro(@PathVariable Long id_livro, @RequestBody LivroRequest livroDTO) {
 
         Livro livro = livroRepository.findById(id_livro)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro não encontrado"));
 
 
-        livroRepository.save(livro);
-        LivroResponse livroDTO = livroMapper.toLivroDTO(livro);
+        livro.setTitulo(livroDTO.titulo());
+        livro.setDataPublicacao(livroDTO.dataPublicacao());
+        livro.setCategoria(livroDTO.categorias());
+        livro.setDescricao(livroDTO.descricao());
+        livro.setIsbn(livroDTO.isbn());
 
-        return new ResponseEntity<>(EntityModel.of(livroDTO,
+        livroRepository.save(livro);
+        LivroResponse livroResponse = livroMapper.toLivroDTO(livro);
+
+        return new ResponseEntity<>(EntityModel.of(livroResponse,
                 linkTo(methodOn(LivroController.class).getLivroById(id_livro)).withSelfRel(),
                 linkTo(methodOn(LivroController.class).getAllLivros()).withRel("getAllLivros"),
-                linkTo(methodOn(LivroController.class).updateInfoLivro(id_livro)).withRel("updateInfoLivro"),
+                linkTo(methodOn(LivroController.class).createLivro(null)).withRel("createLivro"),
+                linkTo(methodOn(LivroController.class).updateInfoLivro(livro.getId(), null)).withRel("updateInfoLivro"),
                 linkTo(methodOn(LivroController.class).deleteLivro(id_livro)).withRel("deleteLivro")
         ), HttpStatus.OK);
     }
 
-    @DeleteMapping(value = "{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/{id_livro}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<EntityModel<LivroResponse>> deleteLivro(@PathVariable Long id_livro) {
 
         Livro livro = livroRepository.findById(id_livro)
